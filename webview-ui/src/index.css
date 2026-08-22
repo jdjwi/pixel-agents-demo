@@ -198,23 +198,13 @@
   }
 }
 
-/* Agent Squad demo: keep the live office unobstructed inside the CC0 CRT art. */
+/* Agent Squad demo prompt, centered over the live office. */
 .demo-prompt-composer {
-  --demo-tv-cabinet-width: calc(100vh * 71 / 60 * 1.36);
-  --demo-tv-cabinet-height: calc(100vh * 1.36);
-  --demo-tv-screen-width: calc(var(--demo-tv-cabinet-width) * 0.59859);
-  --demo-tv-screen-height: calc(var(--demo-tv-screen-width) * 11 / 20);
-
   position: absolute;
   z-index: 30;
-  left: calc(
-    (100vw - var(--demo-tv-cabinet-width)) / 2 + var(--demo-tv-cabinet-width) * 0.11268 +
-      var(--demo-tv-screen-width) / 2
-  );
-  top: calc(
-    var(--demo-tv-cabinet-height) * 0.3825 + var(--demo-tv-screen-height) / 2 - 18px
-  );
-  width: min(440px, calc(var(--demo-tv-screen-width) - 40px));
+  left: 50%;
+  top: 50%;
+  width: min(440px, calc(100vw - 40px));
   transform: translate(-50%, -100%);
 }
 
@@ -434,65 +424,5 @@
   50% {
     opacity: 1;
     transform: translateY(-3px);
-  }
-}
-
-.demo-tv-stage {
-  --demo-tv-cabinet-width: calc(100vh * 71 / 60 * 1.36);
-
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.demo-tv-cabinet {
-  position: relative;
-  flex: none;
-  /* Uniformly enlarge the 710x600 crop from its top edge. This keeps the
-     original 71:60 ratio while pushing the lower red cabinet below view. */
-  width: var(--demo-tv-cabinet-width);
-  height: auto;
-  aspect-ratio: 71 / 60;
-  overflow: hidden;
-  image-rendering: pixelated;
-  filter: drop-shadow(10px 10px 0 #0a0a14);
-  pointer-events: auto;
-}
-
-.demo-tv-art {
-  position: absolute;
-  z-index: 1;
-  top: -25.833%;
-  left: -20.423%;
-  width: 140.845%;
-  height: 166.667%;
-  max-width: none;
-  user-select: none;
-  pointer-events: none;
-  image-rendering: pixelated;
-}
-
-.demo-tv-screen {
-  position: absolute;
-  z-index: 2;
-  top: 38.25%;
-  left: 11.268%;
-  width: 59.859%;
-  height: auto;
-  aspect-ratio: 20 / 11;
-  transform: translateY(-50%);
-  overflow: hidden;
-  background: #2f1d2d;
-  image-rendering: pixelated;
-  clip-path: polygon(2% 0, 98% 0, 100% 3%, 100% 97%, 98% 100%, 2% 100%, 0 97%, 0 3%);
-}
-
-@media (max-width: 1100px) {
-  .demo-tv-stage {
-    left: 0;
   }
 }

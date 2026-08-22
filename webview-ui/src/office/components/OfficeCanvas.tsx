@@ -45,7 +45,7 @@ interface OfficeCanvasProps {
   showAreas: boolean;
   /** Currently-selected area label in the editor (alpha-bumped overlay). null otherwise. */
   activeAreaLabel: string | null;
-  /** Fixed camera position for framed/read-only views such as the demo CRT. */
+  /** Fixed camera position for read-only views such as the demo. */
   lockedPan?: { x: number; y: number } | null;
 }
 

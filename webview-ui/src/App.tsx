@@ -18,7 +18,6 @@ import { ensureDemoAgents } from './demo/browserBridge.js';
 import { DemoAgentHud } from './demo/DemoAgentHud.js';
 import { DemoPromptComposer } from './demo/DemoPromptComposer.js';
 import { DemoResultModal } from './demo/DemoResultModal.js';
-import { DemoTvFrame } from './demo/DemoTvFrame.js';
 import { useDemoRun } from './demo/useDemoRun.js';
 import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
@@ -234,8 +233,8 @@ function App() {
   const [demoLockedPan, setDemoLockedPan] = useState({ x: 0, y: 0 });
 
   // The layout includes VOID staging rows used for character movement. They
-  // must not count as visible office space inside the CRT: fit and center the
-  // actual painted room bounds so the office fills the screen edge to edge.
+  // must not count as visible office space: fit and center the actual painted
+  // room bounds so the office fills the viewport edge to edge.
   useEffect(() => {
     if (!isAgentSquadDemo || !layoutReady) return;
     const viewport = containerRef.current;
@@ -458,13 +457,9 @@ function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden">
-      {isAgentSquadDemo ? (
-        <DemoTvFrame viewportRef={containerRef}>{officeViewport}</DemoTvFrame>
-      ) : (
-        <div ref={containerRef} className="w-full h-full relative overflow-hidden">
-          {officeViewport}
-        </div>
-      )}
+      <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+        {officeViewport}
+      </div>
 
       {isAgentSquadDemo && (
         <>
