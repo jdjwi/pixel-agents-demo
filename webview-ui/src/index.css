@@ -372,6 +372,37 @@
   color: var(--color-status-success);
 }
 
+.demo-agent-hud-document {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: #f4ead3;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.demo-document-sheet {
+  position: relative;
+  width: 10px;
+  height: 13px;
+  background: #f4ead3;
+  border: 1px solid #b78d5d;
+  box-shadow: 1px 1px 0 #0a0a14;
+}
+
+.demo-document-sheet::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 5px;
+  height: 1px;
+  content: '';
+  background: #b78d5d;
+  box-shadow: 0 3px 0 #b78d5d, 0 6px 0 #b78d5d;
+}
+
 .demo-agent-hud-thinking {
   display: inline-flex;
   flex: none;

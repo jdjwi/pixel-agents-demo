@@ -27,6 +27,17 @@ function createAgent(agent: (typeof AGENTS)[keyof typeof AGENTS]): void {
   });
 }
 
+/**
+ * The demo team is a standing office roster, not a set of agents created for
+ * each mission. Creation is idempotent in OfficeState, so this is also safe
+ * when a run starts before the mock layout has finished loading.
+ */
+export function ensureDemoAgents(): void {
+  for (const agent of Object.values(AGENTS)) {
+    createAgent(agent);
+  }
+}
+
 function startTool(id: number, toolId: string, status: string): void {
   dispatch({ type: 'agentToolsClear', id });
   dispatch({ type: 'agentToolStart', id, toolId, toolName: 'Read', status });
@@ -34,13 +45,11 @@ function startTool(id: number, toolId: string, status: string): void {
 
 function finishTool(id: number, toolId: string): void {
   dispatch({ type: 'agentToolDone', id, toolId });
-  dispatch({ type: 'agentStatus', id, status: 'waiting' });
 }
 
 export function resetDemoAgents(): void {
-  for (const agent of Object.values(AGENTS)) {
-    dispatch({ type: 'agentClosed', id: agent.id });
-  }
+  ensureDemoAgents();
+  for (const agent of Object.values(AGENTS)) dispatch({ type: 'agentToolsClear', id: agent.id });
 }
 
 export function emitDemoEventToOffice(event: RunEvent): void {
@@ -51,7 +60,6 @@ export function emitDemoEventToOffice(event: RunEvent): void {
 
   switch (event.type) {
     case 'planner.spawned':
-      createAgent(AGENTS.planner);
       startTool(AGENTS.planner.id, 'planner-pickup', 'Planner · 문서 확인 중');
       break;
     case 'planner.classification.started':
@@ -78,7 +86,6 @@ export function emitDemoEventToOffice(event: RunEvent): void {
       break;
     case 'planner.document.delivered':
       finishTool(AGENTS.planner.id, 'planner-assign');
-      if (targetSolver) createAgent(AGENTS[targetSolver]);
       break;
     case 'agent.solve.started':
       if (solver) {
@@ -107,7 +114,6 @@ export function emitDemoEventToOffice(event: RunEvent): void {
       }
       break;
     case 'boss.review.started':
-      createAgent(AGENTS.boss);
       startTool(AGENTS.boss.id, 'boss-submit', 'Final Boss · 답안 접수 중');
       break;
     case 'boss.review.approved':

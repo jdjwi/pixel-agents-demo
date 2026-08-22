@@ -4,7 +4,7 @@ import type { OfficeState } from '../office/engine/officeState.js';
 import { overlayProjection } from '../office/projection.js';
 import { CharacterState } from '../office/types.js';
 import { DEMO_AGENT_IDS } from './browserBridge.js';
-import type { DemoRunState, TokenAgent } from './types.js';
+import type { DemoRunState, RunEvent, TokenAgent } from './types.js';
 
 interface DemoAgentHudProps {
   state: DemoRunState;
@@ -27,11 +27,48 @@ const HUD_AGENTS: Array<{
   { key: 'boss', label: 'FINAL BOSS' },
 ];
 
+const ARTIFACT_STATE_LABELS = {
+  CREATED: '문서 생성',
+  PRINTED: '출력 완료',
+  CLASSIFYING: '분류 중',
+  ASSIGNED: '담당 배정',
+  IN_PROGRESS: '풀이 중',
+  SOLUTION_READY: '답안 완료',
+  IN_REVIEW: '검토 중',
+  APPROVED: '승인 완료',
+  SUBMITTED: '제출 완료',
+} as const;
+
 function isCurrentOwner(key: DemoAgentKey, owner: string): boolean {
   if (key === 'planner') return owner === 'Planner';
   if (key === 'deep') return owner === 'Deep';
   if (key === 'quick') return owner === 'Quick';
   return owner.startsWith('Final Boss');
+}
+
+function isArtifactOwner(key: DemoAgentKey, owner: DemoRunState['artifactOwner']): boolean {
+  if (key === 'boss') return owner === 'final-boss';
+  return owner === key;
+}
+
+function completionAgentKey(event: RunEvent | undefined): DemoAgentKey | null {
+  if (!event) return null;
+  if (event.type === 'planner.document.delivered') return 'planner';
+  if (event.type === 'boss.review.approved') return 'boss';
+  if (event.type === 'agent.solve.completed') {
+    return event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : null;
+  }
+  return null;
+}
+
+function activatedAgentKey(event: RunEvent | undefined): DemoAgentKey | null {
+  if (!event) return null;
+  if (event.type.startsWith('planner.')) return 'planner';
+  if (event.type === 'boss.review.started') return 'boss';
+  if (event.type.startsWith('agent.') && (event.actorId === 'deep' || event.actorId === 'quick')) {
+    return event.actorId;
+  }
+  return null;
 }
 
 /**
@@ -46,17 +83,43 @@ export function DemoAgentHud({
   zoom,
   panRef,
 }: DemoAgentHudProps) {
-  const [, setTick] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [completionExpiresAt, setCompletionExpiresAt] = useState<Partial<Record<DemoAgentKey, number>>>(
+    {},
+  );
 
   useEffect(() => {
     let frame = 0;
     const updatePosition = () => {
-      setTick((tick) => tick + 1);
+      setCurrentTime(Date.now());
       frame = requestAnimationFrame(updatePosition);
     };
     frame = requestAnimationFrame(updatePosition);
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  const latestEvent = state.events[state.events.length - 1];
+  useEffect(() => {
+    if (state.status === 'idle') {
+      setCompletionExpiresAt({});
+      return;
+    }
+
+    const completedAgent = completionAgentKey(latestEvent);
+    if (completedAgent) {
+      setCompletionExpiresAt((current) => ({ ...current, [completedAgent]: Date.now() + 3_000 }));
+      return;
+    }
+
+    const activatedAgent = activatedAgentKey(latestEvent);
+    if (activatedAgent) {
+      setCompletionExpiresAt((current) => {
+        const next = { ...current };
+        delete next[activatedAgent];
+        return next;
+      });
+    }
+  }, [latestEvent, state.status]);
 
   const container = containerRef.current;
   if (!container || state.status === 'idle') return null;
@@ -76,11 +139,19 @@ export function DemoAgentHud({
         if (!character) return null;
 
         const isActive = isCurrentOwner(key, state.owner);
+        const holdsArtifact = isArtifactOwner(key, state.artifactOwner);
         const tokenTotal = tokenAgent ? state.tokenByAgent[tokenAgent] : null;
+        const completedAt = completionExpiresAt[key];
+        const isCompletionVisible = completedAt !== undefined && completedAt > currentTime;
+        const isCompleted = completedAt !== undefined;
+        const shouldShowHud =
+          (!isCompleted && (isActive || holdsArtifact)) || isCompletionVisible;
+        if (!shouldShowHud) return null;
+
         const verticalOffset = character.state === CharacterState.TYPE ? 24 : 0;
         const screenX = projection.toScreenX(character.x);
         const screenY = projection.toScreenY(character.y + verticalOffset - 42);
-        const summary = isActive
+        const summary = isActive && !isCompleted
           ? state.currentSummary
           : tokenTotal && tokenTotal > 0
             ? '작업 완료'
@@ -109,6 +180,16 @@ export function DemoAgentHud({
             </div>
             {tokenTotal !== null && tokenTotal > 0 && (
               <div className="demo-agent-hud-tokens">{tokenTotal.toLocaleString('ko-KR')} TOKENS</div>
+            )}
+            {holdsArtifact && state.artifactState && (
+              <div
+                className="demo-agent-hud-document"
+                data-artifact-id={state.artifactId ?? undefined}
+                data-artifact-state={state.artifactState}
+              >
+                <span className="demo-document-sheet" aria-hidden="true" />
+                <span>{ARTIFACT_STATE_LABELS[state.artifactState]}</span>
+              </div>
             )}
           </div>
         );

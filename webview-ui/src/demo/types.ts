@@ -30,6 +30,13 @@ export type ProblemCategory = 'math' | 'coding' | 'general';
 export type ProblemDifficulty = 'easy' | 'medium' | 'hard';
 export type SolverModel = 'quick' | 'deep';
 export type TokenAgent = 'planner' | SolverModel;
+export type ArtifactOwner =
+  | 'user'
+  | 'printer'
+  | 'planner'
+  | SolverModel
+  | 'final-boss'
+  | 'submission-window';
 
 export type ArtifactState =
   | 'CREATED'
@@ -52,6 +59,7 @@ export interface RunEvent {
   targetId?: string;
   artifactId: string;
   summary: string;
+  status?: string;
   tokenDelta?: number;
   tokenTotal?: number;
   metadata?: Record<string, string | number | boolean>;
@@ -83,6 +91,8 @@ export interface DemoRunState {
   problemId: string | null;
   problem: string;
   artifactState: ArtifactState | null;
+  artifactId: string | null;
+  artifactOwner: ArtifactOwner | null;
   owner: string;
   currentSummary: string;
   tokenTotal: number;

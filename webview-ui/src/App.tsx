@@ -14,6 +14,7 @@ import { Modal } from './components/ui/Modal.js';
 import { VersionIndicator } from './components/VersionIndicator.js';
 import { ZoomControls } from './components/ZoomControls.js';
 import { ZOOM_MAX } from './constants.js';
+import { ensureDemoAgents } from './demo/browserBridge.js';
 import { DemoAgentHud } from './demo/DemoAgentHud.js';
 import { DemoPromptComposer } from './demo/DemoPromptComposer.js';
 import { DemoResultModal } from './demo/DemoResultModal.js';
@@ -106,6 +107,12 @@ function App() {
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
 
   const demo = useDemoRun(isAgentSquadDemo);
+
+  // Keep the whole demo team in the office from the moment the layout is ready.
+  // Missions only activate their work state; they never create or despawn people.
+  useEffect(() => {
+    if (isAgentSquadDemo && layoutReady) ensureDemoAgents();
+  }, [layoutReady]);
 
   // Show migration notice once layout reset is detected
   const [migrationNoticeDismissed, setMigrationNoticeDismissed] = useState(false);

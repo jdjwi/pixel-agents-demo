@@ -1,10 +1,19 @@
-import type { ArtifactState, DemoRunAction, DemoRunState, RunEventType } from './types.js';
+import type {
+  ArtifactOwner,
+  ArtifactState,
+  DemoRunAction,
+  DemoRunState,
+  RunEvent,
+  RunEventType,
+} from './types.js';
 
 export const DEMO_RUN_IDLE: DemoRunState = {
   status: 'idle',
   problemId: null,
   problem: '',
   artifactState: null,
+  artifactId: null,
+  artifactOwner: null,
   owner: '사용자',
   currentSummary: '문제를 입력하면 Agent Squad가 작업을 시작합니다.',
   tokenTotal: 0,
@@ -17,6 +26,7 @@ export const DEMO_RUN_IDLE: DemoRunState = {
 const artifactStateByEvent: Partial<Record<RunEventType, ArtifactState>> = {
   'run.created': 'CREATED',
   'document.printed': 'PRINTED',
+  'planner.document.picked': 'CLASSIFYING',
   'planner.classification.started': 'CLASSIFYING',
   'planner.agent.selected': 'ASSIGNED',
   'agent.solve.started': 'IN_PROGRESS',
@@ -42,6 +52,42 @@ const ownerByEvent: Partial<Record<RunEventType, string>> = {
   'boss.review.approved': 'Final Boss · 제출 창구',
   'document.submitted': '제출 완료',
 };
+
+function getArtifactOwner(event: RunEvent, current: ArtifactOwner | null): ArtifactOwner | null {
+  switch (event.type) {
+    case 'run.created':
+    case 'problem.submitted':
+      return 'user';
+    case 'printer.started':
+    case 'document.printed':
+      return 'printer';
+    case 'planner.document.picked':
+    case 'planner.classification.started':
+    case 'planner.classification.completed':
+    case 'planner.plan.started':
+    case 'planner.plan.updated':
+    case 'planner.plan.completed':
+    case 'planner.usage.updated':
+    case 'planner.agent.selected':
+      return 'planner';
+    case 'planner.document.delivered':
+      return event.targetId === 'deep' || event.targetId === 'quick' ? event.targetId : current;
+    case 'agent.solve.started':
+    case 'agent.step.updated':
+    case 'agent.usage.updated':
+    case 'agent.confidence.updated':
+    case 'agent.solve.completed':
+    case 'document.solution.updated':
+      return event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : current;
+    case 'boss.review.started':
+    case 'boss.review.approved':
+      return 'final-boss';
+    case 'document.submitted':
+      return 'submission-window';
+    default:
+      return current;
+  }
+}
 
 export function reduceDemoRun(state: DemoRunState, action: DemoRunAction): DemoRunState {
   if (action.kind === 'reset') return DEMO_RUN_IDLE;
@@ -80,11 +126,14 @@ export function reduceDemoRun(state: DemoRunState, action: DemoRunAction): DemoR
   const tokenTotal = tokenByAgent.planner + tokenByAgent.deep + tokenByAgent.quick;
   const isUsageUpdate =
     event.type === 'planner.usage.updated' || event.type === 'agent.usage.updated';
+  const artifactOwner = getArtifactOwner(event, state.artifactOwner);
 
   return {
     ...state,
     status: event.type === 'run.completed' ? 'completed' : state.status,
     artifactState: artifactStateByEvent[event.type] ?? state.artifactState,
+    artifactId: event.artifactId || state.artifactId,
+    artifactOwner,
     owner: (isSolverEvent ? solverOwner : null) ?? ownerByEvent[event.type] ?? state.owner,
     // Token updates are supporting metrics, not a new action. Keep the
     // currently displayed action in place so people can read it.

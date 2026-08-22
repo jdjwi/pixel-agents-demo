@@ -118,6 +118,26 @@ test('artifact state follows the planned vertical-slice lifecycle', () => {
   }
 });
 
+test('the document keeps its ID while its owner follows the handoff sequence', () => {
+  const events = buildPracticeEvents(PROBLEM);
+  const expected = [
+    ['document.printed', 'PRINTED', 'printer'],
+    ['planner.document.picked', 'CLASSIFYING', 'planner'],
+    ['planner.document.delivered', 'ASSIGNED', PROBLEM.solver],
+    ['agent.solve.started', 'IN_PROGRESS', PROBLEM.solver],
+    ['boss.review.started', 'IN_REVIEW', 'final-boss'],
+    ['document.submitted', 'SUBMITTED', 'submission-window'],
+  ] as const;
+
+  for (const [type, artifactState, artifactOwner] of expected) {
+    const index = events.findIndex((event) => event.type === type);
+    const state = play(events.slice(0, index + 1));
+    assert.equal(state.artifactId, `problem-document-${PROBLEM.id}`);
+    assert.equal(state.artifactState, artifactState);
+    assert.equal(state.artifactOwner, artifactOwner);
+  }
+});
+
 test('result cannot open before document.submitted', () => {
   const resultEvent = buildPracticeEvents(PROBLEM).find((event) => event.type === 'result.opened');
   assert.ok(resultEvent);
