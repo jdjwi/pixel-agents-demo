@@ -78,13 +78,17 @@ export function reduceDemoRun(state: DemoRunState, action: DemoRunAction): DemoR
       ? { ...state.tokenByAgent, [tokenAgent]: event.tokenTotal }
       : state.tokenByAgent;
   const tokenTotal = tokenByAgent.planner + tokenByAgent.deep + tokenByAgent.quick;
+  const isUsageUpdate =
+    event.type === 'planner.usage.updated' || event.type === 'agent.usage.updated';
 
   return {
     ...state,
     status: event.type === 'run.completed' ? 'completed' : state.status,
     artifactState: artifactStateByEvent[event.type] ?? state.artifactState,
     owner: (isSolverEvent ? solverOwner : null) ?? ownerByEvent[event.type] ?? state.owner,
-    currentSummary: event.summary,
+    // Token updates are supporting metrics, not a new action. Keep the
+    // currently displayed action in place so people can read it.
+    currentSummary: isUsageUpdate ? state.currentSummary : event.summary,
     tokenTotal,
     tokenByAgent,
     confidence:

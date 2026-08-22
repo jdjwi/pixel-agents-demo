@@ -1,10 +1,17 @@
 import type { RunEvent } from './types.js';
 
+export const DEMO_AGENT_IDS = {
+  planner: 101,
+  deep: 102,
+  quick: 103,
+  boss: 105,
+} as const;
+
 const AGENTS = {
-  planner: { id: 101, palette: 6, name: 'Planner' },
-  deep: { id: 102, palette: 7, name: 'Deep' },
-  quick: { id: 103, palette: 8, name: 'Quick' },
-  boss: { id: 105, palette: 10, name: 'Final Boss' },
+  planner: { id: DEMO_AGENT_IDS.planner, palette: 6, name: 'Planner' },
+  deep: { id: DEMO_AGENT_IDS.deep, palette: 7, name: 'Deep' },
+  quick: { id: DEMO_AGENT_IDS.quick, palette: 8, name: 'Quick' },
+  boss: { id: DEMO_AGENT_IDS.boss, palette: 10, name: 'Final Boss' },
 } as const;
 
 function dispatch(data: unknown): void {

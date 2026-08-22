@@ -320,9 +320,12 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
     event(3900, 'planner.plan.started', 'Planner is building the solution plan.', { actorId: 'planner' }),
   ];
 
-  const plannerStepDuration = 1800 / problem.plannerPlan.length;
+  // A step remains on screen long enough to be read before the next one. The
+  // solver timeline starts only after Planner has completed its handoff.
+  const plannerStepDuration = 1800;
+  const plannerFirstStepTimestamp = 4300;
   problem.plannerPlan.forEach((step, stepIndex) => {
-    const timestampMs = Math.round(4300 + stepIndex * plannerStepDuration);
+    const timestampMs = plannerFirstStepTimestamp + stepIndex * plannerStepDuration;
     const tokenTotal = Math.round(
       (problem.plannerTokenTotal * (stepIndex + 1)) / problem.plannerPlan.length,
     );
@@ -338,25 +341,33 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
     );
   });
 
+  const plannerLastStepTimestamp =
+    plannerFirstStepTimestamp + (problem.plannerPlan.length - 1) * plannerStepDuration;
+  const plannerPlanCompletedTimestamp = plannerLastStepTimestamp + 1500;
+  const agentSelectedTimestamp = plannerPlanCompletedTimestamp + 700;
+  const documentDeliveredTimestamp = agentSelectedTimestamp + 700;
+  const solverStartedTimestamp = documentDeliveredTimestamp + 800;
+  const solverFirstStepTimestamp = solverStartedTimestamp + 900;
+
   events.push(
-    event(6300, 'planner.plan.completed', 'Planner completed the solution plan.', { actorId: 'planner' }),
-    event(6700, 'planner.agent.selected', `${modelName(problem.solver)} selected.`, {
+    event(plannerPlanCompletedTimestamp, 'planner.plan.completed', 'Planner completed the solution plan.', { actorId: 'planner' }),
+    event(agentSelectedTimestamp, 'planner.agent.selected', `${modelName(problem.solver)} selected.`, {
       actorId: 'planner',
       targetId: problem.solver,
     }),
-    event(7200, 'planner.document.delivered', `Plan and prompt delivered to ${modelName(problem.solver)}.`, {
+    event(documentDeliveredTimestamp, 'planner.document.delivered', `Plan and prompt delivered to ${modelName(problem.solver)}.`, {
       actorId: 'planner',
       targetId: problem.solver,
     }),
-    event(7700, 'agent.solve.started', `${modelName(problem.solver)} started solving.`, {
+    event(solverStartedTimestamp, 'agent.solve.started', `${modelName(problem.solver)} started solving.`, {
       actorId: problem.solver,
       metadata: { modelPrompt: problem.modelPrompt },
     }),
   );
 
-  const solverStepDuration = 4600 / problem.solutionSteps.length;
+  const solverStepDuration = 2000;
   problem.solutionSteps.forEach((step, stepIndex) => {
-    const timestampMs = Math.round(8200 + stepIndex * solverStepDuration);
+    const timestampMs = solverFirstStepTimestamp + stepIndex * solverStepDuration;
     const tokenTotal = Math.round(
       (problem.solverTokenTotal * (stepIndex + 1)) / problem.solutionSteps.length,
     );
@@ -372,22 +383,31 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
     );
   });
 
+  const solverLastStepTimestamp =
+    solverFirstStepTimestamp + (problem.solutionSteps.length - 1) * solverStepDuration;
+  const solverCompletedTimestamp = solverLastStepTimestamp + 1600;
+  const solutionAttachedTimestamp = solverCompletedTimestamp + 700;
+  const bossReviewStartedTimestamp = solutionAttachedTimestamp + 700;
+  const bossReviewApprovedTimestamp = bossReviewStartedTimestamp + 1200;
+  const documentSubmittedTimestamp = bossReviewApprovedTimestamp + 700;
+  const resultOpenedTimestamp = documentSubmittedTimestamp + 700;
+
   events.push(
-    event(13100, 'agent.confidence.updated', `Confidence ${problem.confidence}%`, {
+    event(solverCompletedTimestamp - 400, 'agent.confidence.updated', `Confidence ${problem.confidence}%`, {
       actorId: problem.solver,
       metadata: { confidence: problem.confidence },
     }),
-    event(13500, 'agent.solve.completed', `${modelName(problem.solver)} completed the solution.`, {
+    event(solverCompletedTimestamp, 'agent.solve.completed', `${modelName(problem.solver)} completed the solution.`, {
       actorId: problem.solver,
       tokenTotal: problem.solverTokenTotal,
       metadata: { stepCount: problem.solutionSteps.length },
     }),
-    event(14000, 'document.solution.updated', 'Fixed answer and solution attached unchanged.', { actorId: problem.solver }),
-    event(14500, 'boss.review.started', 'Final Boss submission desk received the answer.', { actorId: 'final-boss' }),
-    event(15100, 'boss.review.approved', 'Submission format accepted.', { actorId: 'final-boss' }),
-    event(15600, 'document.submitted', 'Answer submitted.', { actorId: 'final-boss' }),
-    event(16000, 'result.opened', 'Opening the fixed result.', { actorId: 'final-boss' }),
-    event(16100, 'run.completed', 'Run completed.', { actorId: 'final-boss' }),
+    event(solutionAttachedTimestamp, 'document.solution.updated', 'Fixed answer and solution attached unchanged.', { actorId: problem.solver }),
+    event(bossReviewStartedTimestamp, 'boss.review.started', 'Final Boss submission desk received the answer.', { actorId: 'final-boss' }),
+    event(bossReviewApprovedTimestamp, 'boss.review.approved', 'Submission format accepted.', { actorId: 'final-boss' }),
+    event(documentSubmittedTimestamp, 'document.submitted', 'Answer submitted.', { actorId: 'final-boss' }),
+    event(resultOpenedTimestamp, 'result.opened', 'Opening the fixed result.', { actorId: 'final-boss' }),
+    event(resultOpenedTimestamp + 100, 'run.completed', 'Run completed.', { actorId: 'final-boss' }),
   );
   return events.sort((a, b) => a.timestampMs - b.timestampMs);
 }

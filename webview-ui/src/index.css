@@ -198,8 +198,7 @@
   }
 }
 
-/* Agent Squad demo: keep process information in a dedicated menu column and
-   reserve the center of the page for the live office inside the CC0 CRT art. */
+/* Agent Squad demo: keep the live office unobstructed inside the CC0 CRT art. */
 .demo-prompt-composer {
   --demo-tv-cabinet-width: calc(100vh * 71 / 60 * 1.36);
   --demo-tv-cabinet-height: calc(100vh * 1.36);
@@ -299,24 +298,112 @@
   border: 1px solid var(--color-danger);
 }
 
-.demo-progress-menu {
-  --demo-tv-cabinet-width: calc(100vh * 71 / 60 * 1.36);
+.demo-agent-hud {
+  position: absolute;
+  width: min(220px, 42%);
+  padding: 7px 10px 8px;
+  color: var(--color-text-muted);
+  text-align: center;
+  background: rgb(24 24 40 / 94%);
+  border: 2px solid var(--color-border);
+  box-shadow: 3px 3px 0 #0a0a14;
+  text-shadow: 1px 1px 0 #0a0a14;
+  transform: translate(-50%, -100%);
+  transition: opacity 160ms ease, color 160ms ease;
+}
 
-  top: 16px;
-  bottom: 16px;
-  left: 16px;
-  /* Keep the menu in the space before the CRT glass. The television is
-     centered independently, so the menu never steals or covers office space. */
-  width: min(
-    360px,
-    max(
-      0px,
-      calc(
-        (100vw - var(--demo-tv-cabinet-width)) / 2 +
-          var(--demo-tv-cabinet-width) * 0.11268 - 32px
-      )
-    )
-  );
+.demo-agent-hud::after {
+  position: absolute;
+  bottom: -10px;
+  left: calc(50% - 8px);
+  width: 0;
+  height: 0;
+  content: '';
+  border-top: 10px solid var(--color-border);
+  border-right: 8px solid transparent;
+  border-left: 8px solid transparent;
+}
+
+.demo-agent-hud::before {
+  position: absolute;
+  z-index: 1;
+  bottom: -7px;
+  left: calc(50% - 6px);
+  width: 0;
+  height: 0;
+  content: '';
+  border-top: 8px solid rgb(24 24 40 / 94%);
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+}
+
+.demo-agent-hud-active {
+  color: var(--color-text);
+  border-color: var(--color-accent-bright);
+}
+
+.demo-agent-hud-role,
+.demo-agent-hud-tokens {
+  color: var(--color-accent-bright);
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+}
+
+.demo-agent-hud-role {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+
+.demo-agent-hud-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 18px;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.demo-agent-hud-tokens {
+  margin-top: 4px;
+  color: var(--color-status-success);
+}
+
+.demo-agent-hud-thinking {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+}
+
+.demo-agent-hud-thinking span {
+  width: 4px;
+  height: 4px;
+  background: var(--color-accent-bright);
+  animation: demo-agent-thinking 900ms ease-in-out infinite;
+}
+
+.demo-agent-hud-thinking span:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.demo-agent-hud-thinking span:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes demo-agent-thinking {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
 .demo-tv-stage {

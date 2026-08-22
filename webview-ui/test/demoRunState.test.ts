@@ -75,11 +75,27 @@ test('each generated timeline is deterministic and chronologically ordered', () 
       events.findIndex((event) => event.type === 'planner.plan.completed') <
         events.findIndex((event) => event.type === 'planner.agent.selected'),
     );
+    const plannerCompletedAt = events.find((event) => event.type === 'planner.plan.completed')?.timestampMs;
+    const solverStartedAt = events.find((event) => event.type === 'agent.solve.started')?.timestampMs;
+    assert.ok(plannerCompletedAt !== undefined && solverStartedAt !== undefined);
+    assert.ok(solverStartedAt > plannerCompletedAt);
     assert.equal(
       events.some((event) => event.actorId === 'final-boss' && event.tokenTotal !== undefined),
       false,
     );
   }
+});
+
+test('token updates preserve the currently visible process description', () => {
+  const events = buildPracticeEvents(PROBLEM);
+  const plannerStepIndex = events.findIndex((event) => event.type === 'planner.plan.updated');
+  const plannerStep = events[plannerStepIndex];
+  const plannerUsage = events[plannerStepIndex + 1];
+  assert.equal(plannerUsage.type, 'planner.usage.updated');
+
+  const afterStep = play(events.slice(0, plannerStepIndex + 1));
+  const afterUsage = reduceDemoRun(afterStep, { kind: 'event', event: plannerUsage });
+  assert.equal(afterUsage.currentSummary, plannerStep.summary);
 });
 
 test('artifact state follows the planned vertical-slice lifecycle', () => {

@@ -14,7 +14,8 @@ import { Modal } from './components/ui/Modal.js';
 import { VersionIndicator } from './components/VersionIndicator.js';
 import { ZoomControls } from './components/ZoomControls.js';
 import { ZOOM_MAX } from './constants.js';
-import { DemoFlowPanel } from './demo/DemoFlowPanel.js';
+import { DemoAgentHud } from './demo/DemoAgentHud.js';
+import { DemoPromptComposer } from './demo/DemoPromptComposer.js';
 import { DemoResultModal } from './demo/DemoResultModal.js';
 import { DemoTvFrame } from './demo/DemoTvFrame.js';
 import { useDemoRun } from './demo/useDemoRun.js';
@@ -419,18 +420,31 @@ function App() {
       />
 
       {!isDebugMode && (
-        <ToolOverlay
-          officeState={officeState}
-          agents={agents}
-          agentTools={agentTools}
-          subagentTools={subagentTools}
-          subagentCharacters={subagentCharacters}
-          containerRef={containerRef}
-          zoom={officeZoom}
-          panRef={editor.panRef}
-          onCloseAgent={handleCloseAgent}
-          alwaysShowOverlay={alwaysShowOverlay}
-        />
+        <>
+          {!isAgentSquadDemo && (
+            <ToolOverlay
+              officeState={officeState}
+              agents={agents}
+              agentTools={agentTools}
+              subagentTools={subagentTools}
+              subagentCharacters={subagentCharacters}
+              containerRef={containerRef}
+              zoom={officeZoom}
+              panRef={editor.panRef}
+              onCloseAgent={handleCloseAgent}
+              alwaysShowOverlay={alwaysShowOverlay}
+            />
+          )}
+          {isAgentSquadDemo && (
+            <DemoAgentHud
+              state={demo.state}
+              officeState={officeState}
+              containerRef={containerRef}
+              zoom={officeZoom}
+              panRef={editor.panRef}
+            />
+          )}
+        </>
       )}
     </>
   );
@@ -447,12 +461,7 @@ function App() {
 
       {isAgentSquadDemo && (
         <>
-          <DemoFlowPanel
-            state={demo.state}
-            activeProblem={demo.activeProblem}
-            onStart={demo.start}
-            onReset={demo.reset}
-          />
+          {demo.state.status === 'idle' && <DemoPromptComposer onStart={demo.start} />}
           <DemoResultModal
             state={demo.state}
             problem={demo.activeProblem}
