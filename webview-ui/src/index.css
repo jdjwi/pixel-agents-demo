@@ -198,14 +198,24 @@
   }
 }
 
-/* Agent Squad demo prompt, centered over the live office. */
+/* Leave a generous, rounded office canvas with room for the prompt below. */
+.demo-office-viewport {
+  position: absolute;
+  inset: 18px 5.25vw 94px;
+  overflow: hidden;
+  border-radius: 32px;
+  background: #2f1d2d;
+  image-rendering: pixelated;
+}
+
+/* Agent Squad demo prompt, fixed at the center of the bottom edge. */
 .demo-prompt-composer {
   position: absolute;
   z-index: 30;
   left: 50%;
-  top: 50%;
+  bottom: 28px;
   width: min(440px, calc(100vw - 40px));
-  transform: translate(-50%, -100%);
+  transform: translateX(-50%);
 }
 
 .demo-prompt-bar {

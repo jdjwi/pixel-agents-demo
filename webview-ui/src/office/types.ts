@@ -163,6 +163,8 @@ export interface OfficeLayout {
   areas?: AreaDefinition[];
   /** Per-tile Area label, parallel to tiles array. null = no area assignment. */
   areaTiles?: Array<string | null>;
+  /** Optional visual treatment for purpose-built demo layouts. */
+  sceneTheme?: 'calm-data-lab';
 }
 
 export interface Character {

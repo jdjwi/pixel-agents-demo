@@ -31,8 +31,7 @@ const artifactStateByEvent: Partial<Record<RunEventType, ArtifactState>> = {
   'planner.agent.selected': 'ASSIGNED',
   'agent.solve.started': 'IN_PROGRESS',
   'agent.solve.completed': 'SOLUTION_READY',
-  'boss.review.started': 'IN_REVIEW',
-  'boss.review.approved': 'APPROVED',
+  'agent.submission.started': 'SUBMITTING',
   'document.submitted': 'SUBMITTED',
 };
 
@@ -48,8 +47,6 @@ const ownerByEvent: Partial<Record<RunEventType, string>> = {
   'planner.plan.completed': 'Planner',
   'planner.usage.updated': 'Planner',
   'planner.agent.selected': 'Planner',
-  'boss.review.started': 'Final Boss · 제출 창구',
-  'boss.review.approved': 'Final Boss · 제출 창구',
   'document.submitted': '제출 완료',
 };
 
@@ -78,10 +75,8 @@ function getArtifactOwner(event: RunEvent, current: ArtifactOwner | null): Artif
     case 'agent.confidence.updated':
     case 'agent.solve.completed':
     case 'document.solution.updated':
+    case 'agent.submission.started':
       return event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : current;
-    case 'boss.review.started':
-    case 'boss.review.approved':
-      return 'final-boss';
     case 'document.submitted':
       return 'submission-window';
     default:
@@ -108,11 +103,7 @@ export function reduceDemoRun(state: DemoRunState, action: DemoRunAction): DemoR
     state.artifactState === 'SUBMITTED' ||
     state.events.some((item) => item.type === 'document.submitted');
   const solverOwner =
-    event.actorId === 'deep'
-      ? 'Deep'
-      : event.actorId === 'quick'
-        ? 'Quick'
-        : null;
+    event.actorId === 'deep' ? 'Deep' : event.actorId === 'quick' ? 'Quick' : null;
   const isSolverEvent =
     event.type.startsWith('agent.') || event.type === 'document.solution.updated';
   const tokenAgent =

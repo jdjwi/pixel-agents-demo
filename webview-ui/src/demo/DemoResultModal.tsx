@@ -52,9 +52,7 @@ export function DemoResultModal({ state, problem, onClose, onReplay }: DemoResul
         </section>
 
         <section className="mb-14">
-          <div className="text-xs text-text-muted mb-6">
-            {modelName(problem.solver)} 풀이 과정
-          </div>
+          <div className="text-xs text-text-muted mb-6">{modelName(problem.solver)} 풀이 과정</div>
           <ol className="m-0 pl-22 text-xs space-y-6">
             {problem.solutionSteps.map((step) => (
               <li key={step} className="leading-[1.4]">
@@ -72,7 +70,7 @@ export function DemoResultModal({ state, problem, onClose, onReplay }: DemoResul
         </section>
 
         <p className="text-2xs text-text-muted m-0 mb-14">
-          Final Boss는 UI 제출 창구이며 토큰을 사용하지 않습니다.
+          Solver가 Data Intake에 직접 제출한 뒤 결과가 열립니다.
         </p>
 
         <div className="flex justify-end gap-8">

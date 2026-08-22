@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
 
 import { emitDemoEventToOffice, resetDemoAgents } from './browserBridge.js';
-import {
-  buildPracticeEvents,
-  matchPracticeProblem,
-  practiceProblems,
-} from './practiceProblems.js';
+import { buildPracticeEvents, matchPracticeProblem, practiceProblems } from './practiceProblems.js';
 import { DEMO_RUN_IDLE, reduceDemoRun } from './runState.js';
+import type { RunEvent } from './types.js';
 
-export function useDemoRun(enabled: boolean) {
+export function useDemoRun(
+  enabled: boolean,
+  canDispatchEvent: (event: RunEvent) => boolean = () => true,
+) {
   const [state, dispatch] = useReducer(reduceDemoRun, DEMO_RUN_IDLE);
   const timersRef = useRef<number[]>([]);
   const lastInputRef = useRef('');
+  const canDispatchEventRef = useRef(canDispatchEvent);
+
+  useEffect(() => {
+    canDispatchEventRef.current = canDispatchEvent;
+  }, [canDispatchEvent]);
 
   const clearTimers = useCallback(() => {
     for (const timer of timersRef.current) window.clearTimeout(timer);
@@ -27,12 +32,28 @@ export function useDemoRun(enabled: boolean) {
       resetDemoAgents();
       lastInputRef.current = input;
       dispatch({ kind: 'start', problem: input, problemId: problem.id });
-      timersRef.current = buildPracticeEvents(problem).map((event) =>
-        window.setTimeout(() => {
+
+      const events = buildPracticeEvents(problem);
+      const scheduleEvent = (index: number, delayMs: number): void => {
+        const event = events[index];
+        if (!event) return;
+
+        const attempt = () => {
+          if (!canDispatchEventRef.current(event)) {
+            timersRef.current.push(window.setTimeout(attempt, 80));
+            return;
+          }
+
           dispatch({ kind: 'event', event });
           emitDemoEventToOffice(event);
-        }, event.timestampMs),
-      );
+          const next = events[index + 1];
+          if (next) scheduleEvent(index + 1, Math.max(0, next.timestampMs - event.timestampMs));
+        };
+
+        timersRef.current.push(window.setTimeout(attempt, delayMs));
+      };
+
+      scheduleEvent(0, events[0]?.timestampMs ?? 0);
       return true;
     },
     [clearTimers, enabled],

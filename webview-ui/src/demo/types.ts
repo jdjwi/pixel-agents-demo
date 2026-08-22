@@ -20,8 +20,7 @@ export type RunEventType =
   | 'agent.confidence.updated'
   | 'agent.solve.completed'
   | 'document.solution.updated'
-  | 'boss.review.started'
-  | 'boss.review.approved'
+  | 'agent.submission.started'
   | 'document.submitted'
   | 'result.opened'
   | 'run.completed';
@@ -30,13 +29,7 @@ export type ProblemCategory = 'math' | 'coding' | 'general';
 export type ProblemDifficulty = 'easy' | 'medium' | 'hard';
 export type SolverModel = 'quick' | 'deep';
 export type TokenAgent = 'planner' | SolverModel;
-export type ArtifactOwner =
-  | 'user'
-  | 'printer'
-  | 'planner'
-  | SolverModel
-  | 'final-boss'
-  | 'submission-window';
+export type ArtifactOwner = 'user' | 'printer' | 'planner' | SolverModel | 'submission-window';
 
 export type ArtifactState =
   | 'CREATED'
@@ -45,8 +38,7 @@ export type ArtifactState =
   | 'ASSIGNED'
   | 'IN_PROGRESS'
   | 'SOLUTION_READY'
-  | 'IN_REVIEW'
-  | 'APPROVED'
+  | 'SUBMITTING'
   | 'SUBMITTED';
 
 export interface RunEvent {
@@ -55,7 +47,7 @@ export interface RunEvent {
   scenarioId: string;
   timestampMs: number;
   type: RunEventType;
-  actorId?: 'user' | 'printer' | 'planner' | SolverModel | 'final-boss';
+  actorId?: 'user' | 'printer' | 'planner' | SolverModel;
   targetId?: string;
   artifactId: string;
   summary: string;

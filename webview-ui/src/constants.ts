@@ -312,3 +312,18 @@ export const PET_THUMB_SCALE_MARGIN = 0.85;
 export const EMPTY_SPRITE_THUMBNAIL_BG = '#333';
 /** Maximum string length for a PlacedPet.id (defends against pathologically-long layout entries). */
 export const MAX_PET_ID_LENGTH = 128;
+
+// Calm Data Lab graybox palette. Kept here so canvas rendering uses the same
+// shared-color discipline as the rest of the office renderer.
+export const CALM_LAB_PLANNER_WASH = 'rgba(224, 239, 246, 0.28)';
+export const CALM_LAB_LANE_WASH = 'rgba(216, 228, 236, 0.18)';
+export const CALM_LAB_SHARED_WASH = 'rgba(231, 238, 242, 0.16)';
+export const CALM_LAB_GLASS_FILL = 'rgba(157, 223, 239, 0.48)';
+export const CALM_LAB_GLASS_EDGE = 'rgba(222, 250, 255, 0.88)';
+export const CALM_LAB_CYAN = '#9bdced';
+export const CALM_LAB_SAFETY = '#e9bd4f';
+export const CALM_LAB_INTAKE_BG = '#263a49';
+export const CALM_LAB_INTAKE_SHEET = '#d9f5fb';
+export const CALM_LAB_INTAKE_BIN = '#718898';
+export const CALM_LAB_LABEL = '#537184';
+export const CALM_LAB_LANE_LABEL = '#6d8290';

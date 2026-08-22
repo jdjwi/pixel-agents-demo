@@ -24,7 +24,6 @@ const HUD_AGENTS: Array<{
   { key: 'planner', label: 'PLANNER', tokenAgent: 'planner' },
   { key: 'deep', label: 'DEEP', tokenAgent: 'deep' },
   { key: 'quick', label: 'QUICK', tokenAgent: 'quick' },
-  { key: 'boss', label: 'FINAL BOSS' },
 ];
 
 const ARTIFACT_STATE_LABELS = {
@@ -34,28 +33,24 @@ const ARTIFACT_STATE_LABELS = {
   ASSIGNED: '담당 배정',
   IN_PROGRESS: '풀이 중',
   SOLUTION_READY: '답안 완료',
-  IN_REVIEW: '검토 중',
-  APPROVED: '승인 완료',
+  SUBMITTING: '제출 이동 중',
   SUBMITTED: '제출 완료',
 } as const;
 
 function isCurrentOwner(key: DemoAgentKey, owner: string): boolean {
   if (key === 'planner') return owner === 'Planner';
   if (key === 'deep') return owner === 'Deep';
-  if (key === 'quick') return owner === 'Quick';
-  return owner.startsWith('Final Boss');
+  return owner === 'Quick';
 }
 
 function isArtifactOwner(key: DemoAgentKey, owner: DemoRunState['artifactOwner']): boolean {
-  if (key === 'boss') return owner === 'final-boss';
   return owner === key;
 }
 
 function completionAgentKey(event: RunEvent | undefined): DemoAgentKey | null {
   if (!event) return null;
   if (event.type === 'planner.document.delivered') return 'planner';
-  if (event.type === 'boss.review.approved') return 'boss';
-  if (event.type === 'agent.solve.completed') {
+  if (event.type === 'agent.solve.completed' || event.type === 'document.submitted') {
     return event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : null;
   }
   return null;
@@ -64,7 +59,6 @@ function completionAgentKey(event: RunEvent | undefined): DemoAgentKey | null {
 function activatedAgentKey(event: RunEvent | undefined): DemoAgentKey | null {
   if (!event) return null;
   if (event.type.startsWith('planner.')) return 'planner';
-  if (event.type === 'boss.review.started') return 'boss';
   if (event.type.startsWith('agent.') && (event.actorId === 'deep' || event.actorId === 'quick')) {
     return event.actorId;
   }
@@ -84,9 +78,9 @@ export function DemoAgentHud({
   panRef,
 }: DemoAgentHudProps) {
   const [currentTime, setCurrentTime] = useState(0);
-  const [completionExpiresAt, setCompletionExpiresAt] = useState<Partial<Record<DemoAgentKey, number>>>(
-    {},
-  );
+  const [completionExpiresAt, setCompletionExpiresAt] = useState<
+    Partial<Record<DemoAgentKey, number>>
+  >({});
 
   useEffect(() => {
     let frame = 0;
@@ -144,18 +138,18 @@ export function DemoAgentHud({
         const completedAt = completionExpiresAt[key];
         const isCompletionVisible = completedAt !== undefined && completedAt > currentTime;
         const isCompleted = completedAt !== undefined;
-        const shouldShowHud =
-          (!isCompleted && (isActive || holdsArtifact)) || isCompletionVisible;
+        const shouldShowHud = (!isCompleted && (isActive || holdsArtifact)) || isCompletionVisible;
         if (!shouldShowHud) return null;
 
         const verticalOffset = character.state === CharacterState.TYPE ? 24 : 0;
         const screenX = projection.toScreenX(character.x);
         const screenY = projection.toScreenY(character.y + verticalOffset - 42);
-        const summary = isActive && !isCompleted
-          ? state.currentSummary
-          : tokenTotal && tokenTotal > 0
-            ? '작업 완료'
-            : '대기 중';
+        const summary =
+          isActive && !isCompleted
+            ? state.currentSummary
+            : tokenTotal && tokenTotal > 0
+              ? '작업 완료'
+              : '대기 중';
 
         return (
           <div
@@ -165,9 +159,7 @@ export function DemoAgentHud({
             data-testid="demo-agent-hud"
             data-agent={key}
           >
-            <div className="demo-agent-hud-role">
-              {label}
-            </div>
+            <div className="demo-agent-hud-role">{label}</div>
             <div className="demo-agent-hud-summary">
               {isActive && (
                 <span className="demo-agent-hud-thinking" aria-label="처리 중">
@@ -179,7 +171,9 @@ export function DemoAgentHud({
               {summary}
             </div>
             {tokenTotal !== null && tokenTotal > 0 && (
-              <div className="demo-agent-hud-tokens">{tokenTotal.toLocaleString('ko-KR')} TOKENS</div>
+              <div className="demo-agent-hud-tokens">
+                {tokenTotal.toLocaleString('ko-KR')} TOKENS
+              </div>
             )}
             {holdsArtifact && state.artifactState && (
               <div

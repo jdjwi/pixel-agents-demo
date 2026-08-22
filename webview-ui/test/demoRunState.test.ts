@@ -34,12 +34,12 @@ test('catalog contains three problems per category and routes only to Deep or Qu
   for (const category of ['math', 'coding', 'general'] as const) {
     const problems = practiceProblems.filter((problem) => problem.category === category);
     assert.equal(problems.length, 3);
-    assert.deepEqual(
-      problems.map((problem) => problem.solver).sort(),
-      ['deep', 'quick', 'quick'],
-    );
+    assert.deepEqual(problems.map((problem) => problem.solver).sort(), ['deep', 'quick', 'quick']);
   }
-  assert.equal(practiceProblems.some((problem) => String(problem.solver) === 'swift'), false);
+  assert.equal(
+    practiceProblems.some((problem) => String(problem.solver) === 'swift'),
+    false,
+  );
   assert.equal(new Set(practiceProblems.map((problem) => problem.sourceId)).size, 9);
 });
 
@@ -64,7 +64,10 @@ test('each generated timeline is deterministic and chronologically ordered', () 
   for (const problem of practiceProblems) {
     const events = buildPracticeEvents(problem);
     const timestamps = events.map((event) => event.timestampMs);
-    assert.deepEqual(timestamps, [...timestamps].sort((a, b) => a - b));
+    assert.deepEqual(
+      timestamps,
+      [...timestamps].sort((a, b) => a - b),
+    );
     assert.equal(new Set(events.map((event) => event.eventId)).size, events.length);
     assert.equal(events.at(-1)?.type, 'run.completed');
     assert.equal(
@@ -75,13 +78,17 @@ test('each generated timeline is deterministic and chronologically ordered', () 
       events.findIndex((event) => event.type === 'planner.plan.completed') <
         events.findIndex((event) => event.type === 'planner.agent.selected'),
     );
-    const plannerCompletedAt = events.find((event) => event.type === 'planner.plan.completed')?.timestampMs;
-    const solverStartedAt = events.find((event) => event.type === 'agent.solve.started')?.timestampMs;
+    const plannerCompletedAt = events.find(
+      (event) => event.type === 'planner.plan.completed',
+    )?.timestampMs;
+    const solverStartedAt = events.find(
+      (event) => event.type === 'agent.solve.started',
+    )?.timestampMs;
     assert.ok(plannerCompletedAt !== undefined && solverStartedAt !== undefined);
     assert.ok(solverStartedAt > plannerCompletedAt);
     assert.equal(
-      events.some((event) => event.actorId === 'final-boss' && event.tokenTotal !== undefined),
-      false,
+      events.find((event) => event.type === 'document.submitted')?.actorId,
+      problem.solver,
     );
   }
 });
@@ -107,8 +114,7 @@ test('artifact state follows the planned vertical-slice lifecycle', () => {
     ['planner.agent.selected', 'ASSIGNED'],
     ['agent.solve.started', 'IN_PROGRESS'],
     ['agent.solve.completed', 'SOLUTION_READY'],
-    ['boss.review.started', 'IN_REVIEW'],
-    ['boss.review.approved', 'APPROVED'],
+    ['agent.submission.started', 'SUBMITTING'],
     ['document.submitted', 'SUBMITTED'],
   ] as const;
 
@@ -125,7 +131,7 @@ test('the document keeps its ID while its owner follows the handoff sequence', (
     ['planner.document.picked', 'CLASSIFYING', 'planner'],
     ['planner.document.delivered', 'ASSIGNED', PROBLEM.solver],
     ['agent.solve.started', 'IN_PROGRESS', PROBLEM.solver],
-    ['boss.review.started', 'IN_REVIEW', 'final-boss'],
+    ['agent.submission.started', 'SUBMITTING', PROBLEM.solver],
     ['document.submitted', 'SUBMITTED', 'submission-window'],
   ] as const;
 

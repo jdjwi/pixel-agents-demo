@@ -18,6 +18,7 @@ import { ensureDemoAgents } from './demo/browserBridge.js';
 import { DemoAgentHud } from './demo/DemoAgentHud.js';
 import { DemoPromptComposer } from './demo/DemoPromptComposer.js';
 import { DemoResultModal } from './demo/DemoResultModal.js';
+import { isDemoEventReady, useDemoOfficeChoreography } from './demo/labScene.js';
 import { useDemoRun } from './demo/useDemoRun.js';
 import { useEditorActions } from './hooks/useEditorActions.js';
 import { useEditorKeyboard } from './hooks/useEditorKeyboard.js';
@@ -105,7 +106,9 @@ function App() {
     setShowAreas,
   } = useExtensionMessages(getOfficeState, editor.setLastSavedLayout, isEditDirty);
 
-  const demo = useDemoRun(isAgentSquadDemo);
+  const officeState = getOfficeState();
+  const demo = useDemoRun(isAgentSquadDemo, (event) => isDemoEventReady(officeState, event));
+  useDemoOfficeChoreography(isAgentSquadDemo, demo.state, officeState);
 
   // Keep the whole demo team in the office from the moment the layout is ready.
   // Missions only activate their work state; they never create or despawn people.
@@ -310,8 +313,6 @@ function App() {
     transport.send({ type: 'focusAgent', id: focusId });
   }, []);
 
-  const officeState = getOfficeState();
-
   // Merged set of folders the Areas dropdown can map: real workspace folders plus
   // every distinct folder an agent has run in this session (deduped by name; name
   // is the areaMappings key / seat-bias identity, path is only the React list key).
@@ -457,9 +458,15 @@ function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden">
-      <div ref={containerRef} className="w-full h-full relative overflow-hidden">
-        {officeViewport}
-      </div>
+      {isAgentSquadDemo ? (
+        <div ref={containerRef} className="demo-office-viewport" aria-label="AI:GO Calm Data Lab">
+          {officeViewport}
+        </div>
+      ) : (
+        <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+          {officeViewport}
+        </div>
+      )}
 
       {isAgentSquadDemo && (
         <>

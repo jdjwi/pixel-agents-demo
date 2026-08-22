@@ -3,8 +3,7 @@ import type { PracticeProblem, RunEvent, RunEventType, SolverModel } from './typ
 const promptsByModel: Record<SolverModel, string> = {
   quick:
     'Solve the assigned problem directly. Choose the shortest verifiable approach, check the required output format, and return the fixed solution without rewriting the user prompt.',
-  deep:
-    'Solve the assigned problem with explicit reasoning. Verify constraints, edge cases, and the required output format, then return the fixed solution without rewriting the user prompt.',
+  deep: 'Solve the assigned problem with explicit reasoning. Verify constraints, edge cases, and the required output format, then return the fixed solution without rewriting the user prompt.',
 };
 
 export const practiceProblems: PracticeProblem[] = [
@@ -25,11 +24,7 @@ export const practiceProblems: PracticeProblem[] = [
       'Take only the first character.',
       'Append the literal string UPC and print once.',
     ],
-    solutionSteps: [
-      'Read S from standard input.',
-      'Select S[0].',
-      'Print S[0] + "UPC".',
-    ],
+    solutionSteps: ['Read S from standard input.', 'Select S[0].', 'Print S[0] + "UPC".'],
     finalAnswer: 'solution.py\n\ns = input().strip()\nprint(s[0] + "UPC")',
     plannerTokenTotal: 96,
     solverTokenTotal: 184,
@@ -159,7 +154,7 @@ export const practiceProblems: PracticeProblem[] = [
     solver: 'deep',
     title: 'Token Strategy Game',
     prompt:
-      'Alice and Bob play the following game. A stack of $n$ tokens lies before them. The players take turns with Alice going first. On each turn, the player removes either $1$ token or $4$ tokens from the stack. Whoever removes the last token wins. Find the number of positive integers $n$ less than or equal to $2024$ for which there exists a strategy for Bob that guarantees that Bob will win the game regardless of Alice\'s play.',
+      "Alice and Bob play the following game. A stack of $n$ tokens lies before them. The players take turns with Alice going first. On each turn, the player removes either $1$ token or $4$ tokens from the stack. Whoever removes the last token wins. Find the number of positive integers $n$ less than or equal to $2024$ for which there exists a strategy for Bob that guarantees that Bob will win the game regardless of Alice's play.",
     aliases: ['stack of n tokens', '1 token or 4 tokens', 'less than or equal to 2024'],
     modelPrompt: promptsByModel.deep,
     classification: 'Math · Hard · Combinatorial game states',
@@ -266,7 +261,10 @@ export const practiceProblems: PracticeProblem[] = [
 ];
 
 function normalize(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
 }
 
 export function matchPracticeProblem(input: string): PracticeProblem | null {
@@ -311,13 +309,19 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
     event(750, 'printer.started', 'Printing the original prompt.', { actorId: 'printer' }),
     event(1400, 'document.printed', 'Prompt document printed.', { actorId: 'printer' }),
     event(1900, 'planner.spawned', 'Planner received the prompt.', { actorId: 'planner' }),
-    event(2450, 'planner.document.picked', 'Planner picked up the prompt document.', { actorId: 'planner' }),
-    event(2900, 'planner.classification.started', 'Planner is analyzing type and difficulty.', { actorId: 'planner' }),
+    event(2450, 'planner.document.picked', 'Planner picked up the prompt document.', {
+      actorId: 'planner',
+    }),
+    event(2900, 'planner.classification.started', 'Planner is analyzing type and difficulty.', {
+      actorId: 'planner',
+    }),
     event(3500, 'planner.classification.completed', problem.classification, {
       actorId: 'planner',
       metadata: { classification: problem.classification, difficulty: problem.difficulty },
     }),
-    event(3900, 'planner.plan.started', 'Planner is building the solution plan.', { actorId: 'planner' }),
+    event(3900, 'planner.plan.started', 'Planner is building the solution plan.', {
+      actorId: 'planner',
+    }),
   ];
 
   // A step remains on screen long enough to be read before the next one. The
@@ -350,19 +354,39 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
   const solverFirstStepTimestamp = solverStartedTimestamp + 900;
 
   events.push(
-    event(plannerPlanCompletedTimestamp, 'planner.plan.completed', 'Planner completed the solution plan.', { actorId: 'planner' }),
-    event(agentSelectedTimestamp, 'planner.agent.selected', `${modelName(problem.solver)} selected.`, {
-      actorId: 'planner',
-      targetId: problem.solver,
-    }),
-    event(documentDeliveredTimestamp, 'planner.document.delivered', `Plan and prompt delivered to ${modelName(problem.solver)}.`, {
-      actorId: 'planner',
-      targetId: problem.solver,
-    }),
-    event(solverStartedTimestamp, 'agent.solve.started', `${modelName(problem.solver)} started solving.`, {
-      actorId: problem.solver,
-      metadata: { modelPrompt: problem.modelPrompt },
-    }),
+    event(
+      plannerPlanCompletedTimestamp,
+      'planner.plan.completed',
+      'Planner completed the solution plan.',
+      { actorId: 'planner' },
+    ),
+    event(
+      agentSelectedTimestamp,
+      'planner.agent.selected',
+      `${modelName(problem.solver)} selected.`,
+      {
+        actorId: 'planner',
+        targetId: problem.solver,
+      },
+    ),
+    event(
+      documentDeliveredTimestamp,
+      'planner.document.delivered',
+      `Plan and prompt delivered to ${modelName(problem.solver)}.`,
+      {
+        actorId: 'planner',
+        targetId: problem.solver,
+      },
+    ),
+    event(
+      solverStartedTimestamp,
+      'agent.solve.started',
+      `${modelName(problem.solver)} started solving.`,
+      {
+        actorId: problem.solver,
+        metadata: { modelPrompt: problem.modelPrompt },
+      },
+    ),
   );
 
   const solverStepDuration = 2000;
@@ -376,10 +400,15 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
         actorId: problem.solver,
         metadata: { step: stepIndex + 1, stepCount: problem.solutionSteps.length },
       }),
-      event(timestampMs + 20, 'agent.usage.updated', `${modelName(problem.solver)} tokens ${tokenTotal}`, {
-        actorId: problem.solver,
-        tokenTotal,
-      }),
+      event(
+        timestampMs + 20,
+        'agent.usage.updated',
+        `${modelName(problem.solver)} tokens ${tokenTotal}`,
+        {
+          actorId: problem.solver,
+          tokenTotal,
+        },
+      ),
     );
   });
 
@@ -387,27 +416,62 @@ export function buildPracticeEvents(problem: PracticeProblem): RunEvent[] {
     solverFirstStepTimestamp + (problem.solutionSteps.length - 1) * solverStepDuration;
   const solverCompletedTimestamp = solverLastStepTimestamp + 1600;
   const solutionAttachedTimestamp = solverCompletedTimestamp + 700;
-  const bossReviewStartedTimestamp = solutionAttachedTimestamp + 700;
-  const bossReviewApprovedTimestamp = bossReviewStartedTimestamp + 1200;
-  const documentSubmittedTimestamp = bossReviewApprovedTimestamp + 700;
+  const submissionStartedTimestamp = solutionAttachedTimestamp + 700;
+  // The runner will hold document.submitted until the Solver physically reaches
+  // Data Intake, so this is a minimum pacing delay rather than a fake completion.
+  const documentSubmittedTimestamp = submissionStartedTimestamp + 900;
   const resultOpenedTimestamp = documentSubmittedTimestamp + 700;
 
   events.push(
-    event(solverCompletedTimestamp - 400, 'agent.confidence.updated', `Confidence ${problem.confidence}%`, {
+    event(
+      solverCompletedTimestamp - 400,
+      'agent.confidence.updated',
+      `Confidence ${problem.confidence}%`,
+      {
+        actorId: problem.solver,
+        metadata: { confidence: problem.confidence },
+      },
+    ),
+    event(
+      solverCompletedTimestamp,
+      'agent.solve.completed',
+      `${modelName(problem.solver)} completed the solution.`,
+      {
+        actorId: problem.solver,
+        tokenTotal: problem.solverTokenTotal,
+        metadata: { stepCount: problem.solutionSteps.length },
+      },
+    ),
+    event(
+      solutionAttachedTimestamp,
+      'document.solution.updated',
+      'Fixed answer and solution attached unchanged.',
+      { actorId: problem.solver },
+    ),
+    event(
+      submissionStartedTimestamp,
+      'agent.submission.started',
+      `${modelName(problem.solver)} is carrying the answer to Data Intake.`,
+      {
+        actorId: problem.solver,
+        targetId: 'data-intake',
+      },
+    ),
+    event(
+      documentSubmittedTimestamp,
+      'document.submitted',
+      'Solver submitted the answer to Data Intake.',
+      {
+        actorId: problem.solver,
+        targetId: 'data-intake',
+      },
+    ),
+    event(resultOpenedTimestamp, 'result.opened', 'Opening the fixed result.', {
       actorId: problem.solver,
-      metadata: { confidence: problem.confidence },
     }),
-    event(solverCompletedTimestamp, 'agent.solve.completed', `${modelName(problem.solver)} completed the solution.`, {
+    event(resultOpenedTimestamp + 100, 'run.completed', 'Run completed.', {
       actorId: problem.solver,
-      tokenTotal: problem.solverTokenTotal,
-      metadata: { stepCount: problem.solutionSteps.length },
     }),
-    event(solutionAttachedTimestamp, 'document.solution.updated', 'Fixed answer and solution attached unchanged.', { actorId: problem.solver }),
-    event(bossReviewStartedTimestamp, 'boss.review.started', 'Final Boss submission desk received the answer.', { actorId: 'final-boss' }),
-    event(bossReviewApprovedTimestamp, 'boss.review.approved', 'Submission format accepted.', { actorId: 'final-boss' }),
-    event(documentSubmittedTimestamp, 'document.submitted', 'Answer submitted.', { actorId: 'final-boss' }),
-    event(resultOpenedTimestamp, 'result.opened', 'Opening the fixed result.', { actorId: 'final-boss' }),
-    event(resultOpenedTimestamp + 100, 'run.completed', 'Run completed.', { actorId: 'final-boss' }),
   );
   return events.sort((a, b) => a.timestampMs - b.timestampMs);
 }

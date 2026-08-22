@@ -4,14 +4,12 @@ export const DEMO_AGENT_IDS = {
   planner: 101,
   deep: 102,
   quick: 103,
-  boss: 105,
 } as const;
 
 const AGENTS = {
-  planner: { id: DEMO_AGENT_IDS.planner, palette: 6, name: 'Planner' },
-  deep: { id: DEMO_AGENT_IDS.deep, palette: 7, name: 'Deep' },
-  quick: { id: DEMO_AGENT_IDS.quick, palette: 8, name: 'Quick' },
-  boss: { id: DEMO_AGENT_IDS.boss, palette: 10, name: 'Final Boss' },
+  planner: { id: DEMO_AGENT_IDS.planner, palette: 6, name: 'Planner', seatId: 'lab-seat-planner' },
+  deep: { id: DEMO_AGENT_IDS.deep, palette: 7, name: 'Deep', seatId: 'lab-seat-deep' },
+  quick: { id: DEMO_AGENT_IDS.quick, palette: 8, name: 'Quick', seatId: 'lab-seat-quick' },
 } as const;
 
 function dispatch(data: unknown): void {
@@ -24,6 +22,7 @@ function createAgent(agent: (typeof AGENTS)[keyof typeof AGENTS]): void {
     id: agent.id,
     palette: agent.palette,
     folderName: agent.name,
+    seatId: agent.seatId,
   });
 }
 
@@ -33,6 +32,8 @@ function createAgent(agent: (typeof AGENTS)[keyof typeof AGENTS]): void {
  * when a run starts before the mock layout has finished loading.
  */
 export function ensureDemoAgents(): void {
+  // Remove the legacy fourth character when HMR preserves an older demo state.
+  dispatch({ type: 'agentClosed', id: 105 });
   for (const agent of Object.values(AGENTS)) {
     createAgent(agent);
   }
@@ -53,8 +54,7 @@ export function resetDemoAgents(): void {
 }
 
 export function emitDemoEventToOffice(event: RunEvent): void {
-  const solver =
-    event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : null;
+  const solver = event.actorId === 'deep' || event.actorId === 'quick' ? event.actorId : null;
   const targetSolver =
     event.targetId === 'deep' || event.targetId === 'quick' ? event.targetId : null;
 
@@ -89,11 +89,7 @@ export function emitDemoEventToOffice(event: RunEvent): void {
       break;
     case 'agent.solve.started':
       if (solver) {
-        startTool(
-          AGENTS[solver].id,
-          `${solver}-start`,
-          `${AGENTS[solver].name} · 문제 분석 시작`,
-        );
+        startTool(AGENTS[solver].id, `${solver}-start`, `${AGENTS[solver].name} · 문제 분석 시작`);
       }
       break;
     case 'agent.step.updated': {
@@ -113,11 +109,17 @@ export function emitDemoEventToOffice(event: RunEvent): void {
         finishTool(AGENTS[solver].id, `${solver}-step-${stepCount.toString()}`);
       }
       break;
-    case 'boss.review.started':
-      startTool(AGENTS.boss.id, 'boss-submit', 'Final Boss · 답안 접수 중');
+    case 'agent.submission.started':
+      if (solver) {
+        startTool(
+          AGENTS[solver].id,
+          `${solver}-submit`,
+          `${AGENTS[solver].name} · Data Intake로 제출 중`,
+        );
+      }
       break;
-    case 'boss.review.approved':
-      finishTool(AGENTS.boss.id, 'boss-submit');
+    case 'document.submitted':
+      if (solver) finishTool(AGENTS[solver].id, `${solver}-submit`);
       break;
     default:
       break;
